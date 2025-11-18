@@ -355,32 +355,26 @@ elif selected == "Sobre e Entrevistas":
 # ==================================================================== #
 # =========================== ABA OPINIÕES =========================== #
 elif selected == "Opiniões":
+
     st.header(f"ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ{selected}", divider="blue")
     st.markdown("#### Nuven de Palavras")
     logging.basicConfig(level=logging.DEBUG)
-    
+
     st.markdown(
     """
     <style>
-    /* Ajusta as margens do container principal */
     div.block-container {
         padding-left: 2rem;
         padding-right: 2rem;
     }
-    
-    /* Oculta o menu principal, header e footer do Streamlit */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
-
-    /* Centraliza imagens e elementos gráficos */
     img {
         display: block;
         margin-left: auto;
         margin-right: auto;
     }
-
-    /* Classe para centralizar conteúdo */
     .centered {
         display: flex;
         flex-direction: column;
@@ -389,80 +383,103 @@ elif selected == "Opiniões":
     </style>
     """,
     unsafe_allow_html=True
-)
+    )
 
     st_autorefresh(interval=5120000, key="data_refresh")
 
-    try:
-        # Carrega o modelo spaCy para o português
-        nlp = spacy.load("pt_core_news_sm")
-    except OSError:
-        st.error("Modelo spaCy 'pt_core_news_sm' não encontrado. Por favor, execute 'python -m spacy download pt_core_news_sm' no seu terminal.")
-        st.stop()
+    # ================================
+    # 🔥 CARREGAMENTO SEGURO DO SPACY
+    # ================================
+    @st.cache_resource
+    def load_spacy_pt():
+        try:
+            return spacy.load("pt_core_news_sm"), "pt_core_news_sm"
+        except:
+            try:
+                return spacy.load("pt_core_news_md"), "pt_core_news_md"
+            except:
+                try:
+                    return spacy.load("pt_core_news_lg"), "pt_core_news_lg"
+                except:
+                    # fallback — funciona na nuvem sem modelo instalado
+                    from spacy.lang.pt import Portuguese
+                    nlp_blank = Portuguese()
+                    if "sentencizer" not in nlp_blank.pipe_names:
+                        nlp_blank.add_pipe("sentencizer")
+                    return nlp_blank, "blank_pt"
 
+    nlp, MODEL_SPACY = load_spacy_pt()
+    st.info(f"Modelo spaCy carregado: **{MODEL_SPACY}**")
+
+    # ================================
+    # 🔥 CARREGAR DADOS
+    # ================================
     @st.cache_data(ttl=30)
     def load_data(csv_url):
         df = pd.read_csv(csv_url)
-        # FORÇA a renomeação da segunda coluna para um nome simples
+
+        # renomeia a segunda coluna para "percepcao"
         if len(df.columns) > 1:
-            old_col_name = df.columns[1]
-            df.rename(columns={old_col_name: "percepcao"}, inplace=True)
-            logging.debug(f"Coluna '{old_col_name}' renomeada para 'percepcao'.")
+            original = df.columns[1]
+            df.rename(columns={original: "percepcao"}, inplace=True)
+            logging.debug(f"Coluna '{original}' renomeada para 'percepcao'.")
+
         return df
 
-    # ✅ URL corrigida para exportação CSV
     csv_url = "https://docs.google.com/spreadsheets/d/1dsAaDSCpLYts8Y9P6Jbd62yLaHTjvUN_B3H8XBH-JbQ/export?format=csv&id=1dsAaDSCpLYts8Y9P6Jbd62yLaHTjvUN_B3H8XBH-JbQ&gid=1585034273"
 
     try:
         data = load_data(csv_url)
-        logging.debug("Dados carregados com sucesso.")
     except Exception as e:
-        st.error(f"Erro ao carregar os dados: {e}")
-        st.info("Verifique se o link 'csv_url' aponta para a **URL de exportação CSV** das respostas do Google Forms, não a URL do formulário.")
+        st.error(f"Erro ao carregar dados: {e}")
         st.stop()
 
-    # Função para processar os textos da coluna
+    # ================================
+    # 🔥 PROCESSAMENTO DE TEXTO
+    # ================================
     def process_texts(texts):
         doc = nlp(" ".join(texts))
-        
-        # Inclui adjetivos ("ADJ") na análise
-        tokens = [
-            token.lemma_.lower() for token in doc
-            if token.pos_ in ("VERB", "NOUN", "PROPN", "ADJ") and not token.is_stop and token.is_alpha
-        ]
-        logging.debug(f"Número de tokens extraídos: {len(tokens)}")
+        tokens = []
+
+        for token in doc:
+            if not token.is_alpha:
+                continue
+            if getattr(token, "is_stop", False):
+                continue
+
+            lemma = token.lemma_.lower() if hasattr(token, "lemma_") else token.text.lower()
+
+            if hasattr(token, "pos_") and token.pos_:
+                if token.pos_ in ("VERB", "NOUN", "PROPN", "ADJ"):
+                    tokens.append(lemma)
+            else:
+                if len(lemma) > 2:
+                    tokens.append(lemma)
+
         return tokens
 
-    # Lista de palavras irrelevantes adaptada para o tema
-    exclude_words = ["ruim", "radiação", "cabos", "Poluição", "Acúmulo", "contaminavel", "Perigo", "sujeira","Sistentabily", "Reversão", "Utópico", "Se o mundo comessase q descartar corretamente, o meio ambiente vai ter a oportunidade de se regenerar"
+    exclude_words = [
+        "ruim", "radiação", "cabos", "Poluição", "Acúmulo", "contaminavel",
+        "Perigo", "sujeira", "Sistentabily", "Reversão", "Utópico",
+        "Se o mundo comessase q descartar corretamente, o meio ambiente vai ter a oportunidade de se regenerar"
     ]
 
     tokens = None
     wordcloud_image = None
     freq_fig = None
 
-    # Bloco de processamento: busca a coluna de percepção pelo novo nome
-    column_found = None
-    if "percepcao" in data.columns:
-        if not data["percepcao"].dropna().empty:
-            column_found = "percepcao"
-
-    if column_found:
-        texts = data[column_found].dropna().tolist()
-        logging.debug(f"Número de textos encontrados na coluna '{column_found}': {len(texts)}")
-        if texts:
-            tokens = process_texts(texts)
-            # Filtra tokens irrelevantes
-            tokens = [token for token in tokens if token not in exclude_words]
-        else:
-            st.write("A coluna com as percepções está vazia. Por favor, adicione mais respostas no formulário.")
+    if "percepcao" in data.columns and not data["percepcao"].dropna().empty:
+        texts = data["percepcao"].dropna().tolist()
+        tokens = process_texts(texts)
+        tokens = [t for t in tokens if t not in exclude_words]
     else:
-        st.write("Não foi possível encontrar a coluna 'percepcao' no DataFrame. Verifique se a segunda coluna da sua planilha existe e não está vazia.")
+        st.write("Coluna 'percepcao' não encontrada ou vazia.")
 
-
-    # Função para gerar a nuvem de palavras
+    # ================================
+    # 🔥 NUVEM DE PALAVRAS
+    # ================================
     def generate_wordcloud(tokens):
-        frequencies = Counter(tokens)
+        freq = Counter(tokens)
         wc = WordCloud(
             width=600,
             height=600,
@@ -470,90 +487,75 @@ elif selected == "Opiniões":
             colormap="viridis",
             max_words=100
         )
-        wc.generate_from_frequencies(frequencies)
+        wc.generate_from_frequencies(freq)
         return wc.to_array()
 
-    # Cria DataFrame de frequência
     def create_frequency_data(tokens):
-        frequencies = Counter(tokens)
-        freq_df = pd.DataFrame(
-            frequencies.items(), columns=["palavra", "frequencia"]
-        ).sort_values(by="frequencia", ascending=False)
-        freq_df = freq_df.head(10)
-        return freq_df
+        freq = Counter(tokens)
+        df_freq = pd.DataFrame(freq.items(), columns=["palavra", "frequencia"])
+        return df_freq.sort_values(by="frequencia", ascending=False).head(10)
 
-    # Gráfico de frequência com Plotly
     def create_frequency_chart(tokens):
-        freq_df = create_frequency_data(tokens)
+        df_freq = create_frequency_data(tokens)
         fig = px.bar(
-            freq_df,
+            df_freq,
             x="palavra",
             y="frequencia",
             text="frequencia",
             labels={"palavra": "Percepção", "frequencia": "Frequência"},
             color="frequencia",
             color_continuous_scale=[
-    "#003300",  # verde MUITO escuro
-    "#006600",  # verde escuro
-    "#009933",  # verde médio vibrante
-    "#33cc33",  # verde claro
-    "#99ff99"   # verde bem claro
-]
+                "#003300", "#006600", "#009933", "#33cc33", "#99ff99"
+            ]
         )
         fig.update_traces(texttemplate='%{text}', textposition='outside')
         fig.update_layout(xaxis_tickangle=-45, margin=dict(t=40, b=40))
         return fig
 
-    # Geração e exibição
-    if tokens and len(tokens) > 0:
+    if tokens:
         wordcloud_image = generate_wordcloud(tokens)
         freq_fig = create_frequency_chart(tokens)
 
-    # Exibição centralizada
+    # ================================
+    # 🔥 EXIBIÇÃO
+    # ================================
     with st.container(border=True):
-        col1, col2 = st.columns(spec=2)
-        
+        col1, col2 = st.columns(2)
+
         with col1:
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
-            st.markdown("###### :bust_in_silhouette: Opinioes Descarte de E-lixo")
+            st.markdown("###### :bust_in_silhouette: Opiniões — E-lixo")
             if wordcloud_image is not None:
                 st.image(wordcloud_image, use_container_width=True)
             else:
-                st.write("Sem dados para gerar a nuvem de palavras.")
+                st.write("Sem dados suficientes.")
             st.markdown("</div>", unsafe_allow_html=True)
-            
+
         with col2:
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
-            st.markdown("###### :bust_in_silhouette: Contagem de respostas")
+            st.markdown("###### :bust_in_silhouette: Contagem de palavras")
             if freq_fig is not None:
                 st.plotly_chart(freq_fig, use_container_width=True)
             else:
-                st.write("Sem dados para gerar o gráfico.")
+                st.write("Sem dados suficientes.")
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- Seção de depuração
+    # ================================
+    # 🔥 DEPURAÇÃO
+    # ================================
     st.markdown("---")
     with st.expander("Informações de Depuração"):
-        st.markdown("###### Colunas do DataFrame:")
+        st.write("##### Colunas do DataFrame:")
         st.write(data.columns.tolist())
-        
-        st.markdown("###### Primeiras 5 linhas do DataFrame:")
+
+        st.write("##### Primeiras 5 linhas:")
         st.dataframe(data.head())
 
-        st.markdown("###### Análise de Texto:")
-        if column_found:
-            st.write(f"Coluna encontrada: **'{column_found}'**")
-            st.write(f"Número de respostas na coluna: **{len(texts)}**")
-            if tokens:
-                st.write(f"Número de tokens (palavras) extraídos: **{len(tokens)}**")
-                st.write("Exemplos de tokens:")
-                st.write(tokens[:10])
-            else:
-                st.write("Nenhum token foi extraído. A lista de `tokens` está vazia.")
+        if tokens:
+            st.write(f"Tokens extraídos: {len(tokens)}")
+            st.write(tokens[:15])
         else:
-            st.write("Não foi possível encontrar a coluna de percepções. Verifique a seção 'Primeiras 5 linhas' para confirmar o nome da segunda coluna.")
-
-
+            st.write("Nenhum token extraído.")
 # =================================================================== #
 # ======================== Pontos de Coleta ========================= #
 elif selected == "Pontos de Coleta":
