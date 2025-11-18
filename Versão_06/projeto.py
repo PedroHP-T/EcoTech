@@ -210,7 +210,23 @@ if selected == "Informações":
 # ==================================================================== #
 # =========================== ABA SOBRE ============================== #
 elif selected == "Sobre e Entrevistas":
-    st.header(f"ㅤㅤㅤㅤㅤㅤㅤㅤㅤ{selected}", divider="red")
+    st.markdown("""
+    <style>
+    .centralizado {
+        text-align: center;
+        font-size: 2.5vw;  /* Tamanho relativo à largura da tela */
+        font-weight: bold;
+        color: red;
+    }
+    @media (max-width: 768px) {
+        .centralizado {
+            font-size: 5vw; /* Ajuste em telas pequenas */
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f'<div class="centralizado">{selected}</div>', unsafe_allow_html=True)
     
     st.markdown("### EcoTech - O Início")
 
