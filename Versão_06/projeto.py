@@ -485,13 +485,16 @@ if selected == "Opiniões":
         }
         df_manual = pd.DataFrame(dados_manuais)
         
-        # LIMITE MÁXIMO DE 30
+        # FORÇAR INTEIROS
+        df_manual['frequencia'] = pd.to_numeric(df_manual['frequencia'], errors='coerce').fillna(0).astype(int)
+
+        # APLICAR LIMITE MÁXIMO DE 30
         df_manual['frequencia'] = df_manual['frequencia'].apply(lambda x: min(x, 30))
 
         # ORDENAR DECRESCENTE
         df_manual = df_manual.sort_values(by="frequencia", ascending=False)
 
-        # COR VERDE SÓLIDA
+        # DEFINIR COR VERDE SÓLIDA
         COR_VERDE_SOLIDA = "rgb(0, 204, 0)"
         df_manual["cor"] = COR_VERDE_SOLIDA
 
