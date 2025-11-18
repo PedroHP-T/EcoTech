@@ -261,17 +261,32 @@ elif selected == "Sobre e Entrevistas":
 
         # Video centralizado
     st.markdown("""
-        <div style="text-align:center;">
-            <iframe 
-                width="700" 
-                height="394"
-                src="https://www.youtube.com/embed/NklcpkNMhSE?controls=0&modestbranding=1&rel=0&showinfo=0&fs=0"
-                style="border-radius: 12px; border: none;"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
-        </div>
-        """, unsafe_allow_html=True)
+    <style>
+    .responsive-video {
+        position: relative;
+        padding-bottom: 56.25%; /* Proporção 16:9 */
+        height: 0;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+    .responsive-video iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    </style>
+
+    <div class="responsive-video">
+        <iframe 
+            src="https://www.youtube.com/embed/NklcpkNMhSE?controls=0&modestbranding=1&rel=0&showinfo=0&fs=0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+        </iframe>
+    </div>
+    """, unsafe_allow_html=True)
 
         # 5 colunas
     col1, col2, col3, col4, col5 = st.columns(5)
