@@ -3,7 +3,7 @@ google-generativeai
 plotly
 streamlit-option-menu
 pandas
-spacy
+spacy==3.7.4
 wordcloud
 streamlit-autorefresh
 folium
