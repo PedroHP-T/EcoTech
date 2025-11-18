@@ -212,20 +212,29 @@ if selected == "Informações":
 elif selected == "Sobre e Entrevistas":
     st.markdown("""
     <style>
-    h1 {
+    .divider-red {
+        border-top: 3px solid red;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        width: 50%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    h2 {
         text-align: center;
-        font-size: 4vw;  /* Ajusta tamanho relativo à tela */
-        color: red;
+        color: black;
+        font-size: 4vw;
     }
     @media (max-width: 768px) {
-        h1 {
+        h2 {
             font-size: 6vw;
         }
     }
     </style>
     """, unsafe_allow_html=True)
-    
-    st.markdown(f"# {selected}", unsafe_allow_html=True)
+
+    st.markdown(f"<h2>{selected}</h2>", unsafe_allow_html=True)
+    st.markdown('<div class="divider-red"></div>', unsafe_allow_html=True)
     
     st.markdown("### EcoTech - O Início")
 
