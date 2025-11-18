@@ -502,20 +502,36 @@ elif selected == "Opiniões":
                 return df_freq.sort_values(by="frequencia", ascending=False).head(10)
 
             def create_frequency_chart(tokens):
-                # Frequências fixas conforme você enviou
+                # Frequências fixas conforme você enviou (corrigidas)
                 data_dict = {
-                    "palavra": ["pilha", "celular", "bateria", "computador", "eletronicos", "carregador", "poliução"],
-                    "frequencia": [34, 20, 19, 7, 4, 3, 3]
+                    "palavra": [
+                        "pilha",
+                        "celular",
+                        "bateria",
+                        "computador",
+                        "eletrônicos",
+                        "carregador",
+                        "poluição"
+                    ],
+                    "frequencia": [
+                        34,  # pilha 27 + pilhas 7
+                        20,  # celular 16 + celulares 4
+                        19,  # bateria 16 + baterias 3
+                        7,
+                        4,
+                        3,
+                        3
+                    ]
                 }
-                
+
                 df_freq = pd.DataFrame(data_dict)
-                
-                # ordena do maior para o menor
+
+                # Ordenar do maior para o menor
                 df_freq = df_freq.sort_values(by="frequencia", ascending=False)
 
-                # cores verdes proporcionais
+                # Cores verdes proporcionais ao valor
                 df_freq["cor"] = df_freq["frequencia"].apply(
-                    lambda x: f"rgb(0,{50 + int(205 * x/df_freq['frequencia'].max())},0)"
+                    lambda x: f"rgb(0,{60 + int(195 * (x / df_freq['frequencia'].max()))},0)"
                 )
 
                 fig = px.bar(
@@ -530,16 +546,16 @@ elif selected == "Opiniões":
 
                 fig.update_traces(
                     texttemplate="%{y}",
-                    textposition='outside'
+                    textposition="outside"
                 )
+
                 fig.update_layout(
                     xaxis_tickangle=-45,
                     margin=dict(t=40, b=40),
                     showlegend=False
                 )
-                
-                return fig
 
+                return fig
             wordcloud_image = generate_wordcloud(tokens)
             freq_fig = create_frequency_chart(tokens)
         else:
