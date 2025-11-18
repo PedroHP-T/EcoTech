@@ -26,44 +26,53 @@ st.set_page_config(
 
 # ====================== CHAVE API GEMINI ============================= #
 # 1. LER OS SEGREDOS DO ST.SECRETS
-SECRETS_FILE = os.path.join(".streamlit","secrets.toml")
+SECRETS_FILE = os.path.join(".streamlit", "secrets.toml")
 
 try:
-    # Tenta ler o arquivo TOML diretamente
+    # Lê o arquivo TOML local
     with open(SECRETS_FILE, 'r', encoding='utf-8') as f:
         config = toml.load(f)
-        
-    # --- Lendo as variáveis do dicionário 'config' ---
+
+    # Pega as chaves
     API_KEY = config["gemini_api_key"]
     MODEL_NAME = config["modelo_gemini"]
-    SYSTEM_INSTRUCTION = config["system_instruction"] 
-    
+    SYSTEM_INSTRUCTION = config["system_instruction"]
+
 except FileNotFoundError:
     st.error(f"Erro: Arquivo de segredos não encontrado em '{SECRETS_FILE}'.")
-    st.info("Certifique-se de que você está executando 'streamlit run' na pasta raiz do projeto.")
-    st.stop()
-    
-except KeyError as e:
-    st.error(f"Erro: Chave de segredo {e} não encontrada no arquivo secrets.toml. Verifique a grafia.")
     st.stop()
 
+except KeyError as e:
+    st.error(f"Erro: Chave {e} não encontrada em secrets.toml.")
+    st.stop()
+
+
+# ✅ FUNÇÃO CORRETA — sem Client(), que não existe
 @st.cache_resource
 def get_gemini_model():
     """
-    Configura o Gemini e retorna o objeto Client da nova biblioteca google-genai.
+    Configura o Gemini usando google-generativeai
+    e retorna o modelo já pronto para uso.
     """
     try:
-        # A nova biblioteca 'google-genai' usa genai.Client() para inicializar a conexão
-        client = genai.Client(api_key=API_KEY) 
-        return client
-    
+        # Configura a API KEY
+        genai.configure(api_key=API_KEY)
+
+        # Cria o modelo Gemini correto
+        model = genai.GenerativeModel(
+            model_name=MODEL_NAME,
+            system_instruction=SYSTEM_INSTRUCTION
+        )
+        return model
+
     except Exception as e:
-        st.error(f"Falha ao configurar o Gemini ou carregar o modelo '{MODEL_NAME}': {e}")
+        st.error(f"Falha ao configurar o Gemini ('{MODEL_NAME}'): {e}")
         st.stop()
 
-# ⚠️ DEFINIÇÃO DA VARIÁVEL 'modelo' GLOBALMENTE ⚠️
-# 'modelo' agora é o objeto Client
+
+# ✅ Agora 'modelo' é o GenerativeModel correto
 modelo = get_gemini_model()
+
 
 # ==================================================================== #
 # ======================== MENU LATERAL ============================== #
