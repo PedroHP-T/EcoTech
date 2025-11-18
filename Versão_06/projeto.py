@@ -17,6 +17,7 @@ from streamlit_folium import st_folium
 from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
 import numpy as np
+from collections import Counter
 
 try:
     nlp = spacy.load("pt_core_news_sm")
@@ -366,52 +367,36 @@ elif selected == "Sobre e Entrevistas":
 # ==================================================================== #
 # =========================== ABA OPINIÕES =========================== #
 elif selected == "Opiniões":
-
     st.header(f"{selected}", divider="blue")
-    st.markdown("#### Nuvem de Palavras")
-    logging.basicConfig(level=logging.DEBUG)
 
-    st.markdown(
-        """
+    # ================================
+    # 🔹 ESTILO CSS
+    # ================================
+    st.markdown("""
         <style>
-        div.block-container {
-            padding-left: 2rem;
-            padding-right: 2rem;
-        }
+        div.block-container { padding-left: 2rem; padding-right: 2rem; }
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
-        img {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .centered {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        img { display: block; margin-left: auto; margin-right: auto; }
+        .centered { display: flex; flex-direction: column; align-items: center; }
         </style>
-        """,
-        unsafe_allow_html=True
+        """, unsafe_allow_html=True
     )
 
     st_autorefresh(interval=5120000, key="data_refresh")
 
     # ================================
-    # 🔥 CARREGAMENTO SEGURO DO SPACY
+    # 🔹 CARREGAMENTO DO SPACY
     # ================================
     @st.cache_resource
     def load_spacy_pt():
-        try:
-            return spacy.load("pt_core_news_sm"), "pt_core_news_sm"
-        except:
-            try:
-                return spacy.load("pt_core_news_md"), "pt_core_news_md"
-            except:
-                try:
-                    return spacy.load("pt_core_news_lg"), "pt_core_news_lg"
-                except:
+        try: return spacy.load("pt_core_news_sm"), "pt_core_news_sm"
+        except: 
+            try: return spacy.load("pt_core_news_md"), "pt_core_news_md"
+            except: 
+                try: return spacy.load("pt_core_news_lg"), "pt_core_news_lg"
+                except: 
                     from spacy.lang.pt import Portuguese
                     nlp_blank = Portuguese()
                     if "sentencizer" not in nlp_blank.pipe_names:
@@ -422,7 +407,7 @@ elif selected == "Opiniões":
     st.info(f"Modelo spaCy carregado: **{MODEL_SPACY}**")
 
     # ================================
-    # 🔥 CARREGAR DADOS
+    # 🔹 CARREGAR DADOS
     # ================================
     @st.cache_data(ttl=30)
     def load_data(csv_url):
@@ -435,35 +420,27 @@ elif selected == "Opiniões":
 
     csv_url = "https://docs.google.com/spreadsheets/d/1dsAaDSCpLYts8Y9P6Jbd62yLaHTjvUN_B3H8XBH-JbQ/export?format=csv&id=1dsAaDSCpLYts8Y9P6Jbd62yLaHTjvUN_B3H8XBH-JbQ&gid=1585034273"
 
-    try:
-        data = load_data(csv_url)
+    try: data = load_data(csv_url)
     except Exception as e:
         st.error(f"Erro ao carregar dados: {e}")
         st.stop()
 
     # ================================
-    # 🔥 PROCESSAMENTO DE TEXTO
+    # 🔹 PROCESSAMENTO DE TEXTO
     # ================================
     def process_texts(texts):
         doc = nlp(" ".join(texts))
-        tokens = []
-
+        tokens_list = []
         for token in doc:
-            if not token.is_alpha:
-                continue
-            if getattr(token, "is_stop", False):
-                continue
-
+            if not token.is_alpha: continue
+            if getattr(token, "is_stop", False): continue
             lemma = token.lemma_.lower() if hasattr(token, "lemma_") else token.text.lower()
-
             if hasattr(token, "pos_") and token.pos_:
                 if token.pos_ in ("VERB", "NOUN", "PROPN", "ADJ"):
-                    tokens.append(lemma)
+                    tokens_list.append(lemma)
             else:
-                if len(lemma) > 2:
-                    tokens.append(lemma)
-
-        return tokens
+                if len(lemma) > 2: tokens_list.append(lemma)
+        return tokens_list
 
     exclude_words = [
         "ruim", "radiação", "cabos", "Poluição", "Acúmulo", "contaminavel",
@@ -481,11 +458,12 @@ elif selected == "Opiniões":
         tokens = [t for t in tokens if t not in exclude_words]
 
         if tokens:
+
             # ================================
-            # 🔥 NUVEM DE PALAVRAS
+            # 🔥 WORDCLOUD
             # ================================
-            def generate_wordcloud(tokens):
-                freq = Counter(tokens)
+            def generate_wordcloud(tokens_list):
+                freq = Counter(tokens_list)
                 wc = WordCloud(
                     width=600,
                     height=600,
@@ -496,41 +474,19 @@ elif selected == "Opiniões":
                 wc.generate_from_frequencies(freq)
                 return wc.to_array()
 
-            def create_frequency_data(tokens):
-                freq = Counter(tokens)
+            # ================================
+            # 🔥 GRÁFICO DE FREQUÊNCIA
+            # ================================
+            def create_frequency_chart(tokens_list):
+                freq = Counter(tokens_list)
                 df_freq = pd.DataFrame(freq.items(), columns=["palavra", "frequencia"])
-                return df_freq.sort_values(by="frequencia", ascending=False).head(10)
+                df_freq = df_freq.sort_values(by="frequencia", ascending=False)  # todas as palavras
 
-            # Seu dicionário de tokens
-            tokens = {
-                "pilha": 27,
-                "celular": 16,
-                "bateria": 16,
-                "computador": 7,
-                "pilhas": 7,
-                "eletronicos": 4,
-                "celulares": 4,
-                "carregador": 3,
-                "poluição": 3,
-                "baterias": 3
-            }
-
-            def create_frequency_chart(tokens):
-                # Criar DataFrame a partir do dicionário
-                df_freq = pd.DataFrame({
-                    "palavra": list(tokens.keys()),
-                    "frequencia": list(tokens.values())
-                })
-
-                # Ordenar do maior para o menor
-                df_freq = df_freq.sort_values(by="frequencia", ascending=False)
-
-                # Cores verdes proporcionais à frequência
+                # Cores verdes proporcionais
                 df_freq["cor"] = df_freq["frequencia"].apply(
-                    lambda x: f"rgb(0,{60 + int(195 * (x / df_freq['frequencia'].max()))},0)"
+                    lambda x: f"rgb(0,{100 + int(155 * (x / df_freq['frequencia'].max()))},0)"
                 )
 
-                # Criar gráfico de barras
                 fig = px.bar(
                     df_freq,
                     x="palavra",
@@ -542,13 +498,11 @@ elif selected == "Opiniões":
                 )
 
                 fig.update_traces(texttemplate="%{y}", textposition="outside")
-                
-                # Ajustes de layout para Streamlit
                 fig.update_layout(
                     xaxis_tickangle=-45,
                     margin=dict(t=40, b=40, l=20, r=20),
-                    height=400,  # altura reduzida
-                    width=700,   # largura ajustada
+                    height=400,
+                    width=700,
                     showlegend=False
                 )
 
@@ -556,13 +510,9 @@ elif selected == "Opiniões":
 
             wordcloud_image = generate_wordcloud(tokens)
             freq_fig = create_frequency_chart(tokens)
-        else:
-            st.warning("Tokens processados estão vazios. Verifique os dados ou palavras excluídas.")
-    else:
-        st.warning("Coluna 'percepcao' não encontrada ou vazia.")
 
     # ================================
-    # 🔥 EXIBIÇÃO
+    # 🔹 EXIBIÇÃO
     # ================================
     with st.container():
         col1, col2 = st.columns(2)
@@ -570,39 +520,33 @@ elif selected == "Opiniões":
         with col1:
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Opiniões — E-lixo")
-            
-            # Checagem segura da wordcloud
             if wordcloud_image is not None and isinstance(wordcloud_image, np.ndarray):
                 img = Image.fromarray(wordcloud_image)
                 if img.mode != "RGB":
                     img = img.convert("RGB")
-                st.image(img)  # sem use_container_width
+                st.image(img)
             else:
-                st.write("Sem nuvem de palavras disponível ou imagem inválida.")
-            
+                st.write("Sem nuvem de palavras disponível.")
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col2:
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Contagem de palavras")
             if freq_fig is not None:
-                st.plotly_chart(freq_fig, use_container_width=True)  # Plotly continua funcionando
+                st.plotly_chart(freq_fig, use_container_width=True)
             else:
                 st.write("Sem gráfico de frequência disponível.")
             st.markdown("</div>", unsafe_allow_html=True)
 
-
     # ================================
-    # 🔥 DEPURAÇÃO
+    # 🔹 DEPURAÇÃO
     # ================================
     st.markdown("---")
     with st.expander("Informações de Depuração"):
         st.write("##### Colunas do DataFrame:")
         st.write(data.columns.tolist())
-
         st.write("##### Primeiras 5 linhas:")
         st.dataframe(data.head())
-
         if tokens:
             st.write(f"Tokens extraídos: {len(tokens)}")
             st.write(tokens[:15])
