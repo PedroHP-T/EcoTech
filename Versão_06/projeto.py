@@ -473,66 +473,59 @@ if selected == "Opiniões":
             wordcloud_image = generate_wordcloud(tokens)
             
 
-# =======================================================
-# 🔹 FUNÇÃO DO GRÁFICO FIXO (DADOS DECIDIDOS PELO CÓDIGO)
-# =======================================================
-def create_manual_chart():
-    # DADOS FIXOS
-    dados_manuais = {
-        "Percepção": ["poluição", "carregador", "celulares", "eletrônico", 
-                      "pilhas", "computador", "bateria", "celular", "pilha"],
-        "frequencia": [3, 3, 4, 4, 7, 7, 16, 16, 27]
-    }
-    df_manual = pd.DataFrame(dados_manuais)
-    
-    # LIMITE MÁXIMO DE 30
-    df_manual['frequencia'] = df_manual['frequencia'].apply(lambda x: min(x, 30))
+    # =======================================================
+    # 🔹 FUNÇÃO DO GRÁFICO FIXO (DADOS DECIDIDOS PELO CÓDIGO)
+    # =======================================================
+    def create_manual_chart():
+        # DADOS FIXOS
+        dados_manuais = {
+            "Percepção": ["poluição", "carregador", "celulares", "eletrônico", 
+                        "pilhas", "computador", "bateria", "celular", "pilha"],
+            "frequencia": [3, 3, 4, 4, 7, 7, 16, 16, 27]
+        }
+        df_manual = pd.DataFrame(dados_manuais)
+        
+        # LIMITE MÁXIMO DE 30
+        df_manual['frequencia'] = df_manual['frequencia'].apply(lambda x: min(x, 30))
 
-    # ORDENAR DECRESCENTE
-    df_manual = df_manual.sort_values(by="frequencia", ascending=False)
+        # ORDENAR DECRESCENTE
+        df_manual = df_manual.sort_values(by="frequencia", ascending=False)
 
-    # COR VERDE SÓLIDA
-    COR_VERDE_SOLIDA = "rgb(0, 204, 0)"
-    df_manual["cor"] = COR_VERDE_SOLIDA
+        # COR VERDE SÓLIDA
+        COR_VERDE_SOLIDA = "rgb(0, 204, 0)"
+        df_manual["cor"] = COR_VERDE_SOLIDA
 
-    # CRIAR GRÁFICO
-    fig = px.bar(
-        df_manual,
-        x="Percepção",
-        y="frequencia",
-        text="frequencia",
-        labels={"Percepção": "Percepção", "frequencia": "Frequência"},
-        color="cor",
-        color_discrete_map={COR_VERDE_SOLIDA: COR_VERDE_SOLIDA},
-        category_orders={"Percepção": df_manual["Percepção"].tolist()}  # mantém a ordem
-    )
+        # CRIAR GRÁFICO
+        fig = px.bar(
+            df_manual,
+            x="Percepção",
+            y="frequencia",
+            text="frequencia",
+            labels={"Percepção": "Percepção", "frequencia": "Frequência"},
+            color="cor",
+            color_discrete_map={COR_VERDE_SOLIDA: COR_VERDE_SOLIDA},
+            category_orders={"Percepção": df_manual["Percepção"].tolist()}  # mantém a ordem
+        )
 
-    fig.update_traces(texttemplate="%{y}", textposition="outside")
-    fig.update_layout(
-        showlegend=False,
-        xaxis_tickangle=-45,
-        margin=dict(t=40, b=40, l=20, r=20),
-        height=400,
-        width=700,
-        plot_bgcolor='rgb(248, 248, 248)',
-        paper_bgcolor='rgb(248, 248, 248)',
-        title='Contagem de palavras'
-    )
+        fig.update_traces(texttemplate="%{y}", textposition="outside")
+        fig.update_layout(
+            showlegend=False,
+            xaxis_tickangle=-45,
+            margin=dict(t=40, b=40, l=20, r=20),
+            height=400,
+            width=700,
+            plot_bgcolor='rgb(248, 248, 248)',
+            paper_bgcolor='rgb(248, 248, 248)',
+            title='Contagem de palavras'
+        )
 
-    return fig
+        return fig
 
-# =======================================================
-# 🔹 EXIBIÇÃO NO STREAMLIT
-# =======================================================
-st.header("Gráfico de Frequência — Dados Fixos")
-fig_manual = create_manual_chart()
-st.plotly_chart(fig_manual, use_container_width=True)
-# ================================
-# 🔹 CHAMADA PARA EXIBIÇÃO
-# ================================
-if st.button("Mostrar gráfico manual"):
-    fig_manual = create_manual_chart()
-    st.plotly_chart(fig_manual, use_container_width=True)
+    # =======================================================
+    # 🔹 EXIBIÇÃO AUTOMÁTICA NO STREAMLIT
+    # =======================================================
+    st.header("Gráfico de Frequência — Dados Fixos")
+    st.plotly_chart(create_manual_chart(), use_container_width=True)
     # ================================
     # 🔹 EXIBIÇÃO (SEQUENCIAL / VERTICAL)
     # ================================
