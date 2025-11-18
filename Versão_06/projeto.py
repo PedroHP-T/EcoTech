@@ -492,7 +492,10 @@ elif selected == "Opiniões":
             response = requests.get(url_grafico)
             response.raise_for_status()
             grafico_img = Image.open(BytesIO(response.content))
-            st.image(grafico_img, use_column_width=True)
+            if grafico_img.mode != "RGB":
+                grafico_img = grafico_img.convert("RGB")
+            # Aumenta o tamanho da imagem (ex: largura 700px)
+            st.image(grafico_img, width=700)
         except Exception as e:
             st.write(f"Não foi possível carregar a imagem: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
