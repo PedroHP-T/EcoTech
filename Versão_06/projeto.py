@@ -494,8 +494,13 @@ elif selected == "Opiniões":
             grafico_img = Image.open(BytesIO(response.content))
             if grafico_img.mode != "RGB":
                 grafico_img = grafico_img.convert("RGB")
-            # Aumenta levemente a altura para deixar mais esticado verticalmente
-            st.image(grafico_img, use_column_width=True, height=500)  # ajuste a altura conforme quiser
+            
+            # Redimensiona a imagem: largura mantém a coluna, altura aumenta 20%
+            largura, altura = grafico_img.size
+            nova_altura = int(altura * 1.2)  # aumenta 20% verticalmente
+            grafico_img = grafico_img.resize((largura, nova_altura))
+            
+            st.image(grafico_img, use_column_width=True)  # mantém largura automática
         except Exception as e:
             st.write(f"Não foi possível carregar a imagem: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
