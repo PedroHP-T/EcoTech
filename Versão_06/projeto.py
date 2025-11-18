@@ -14,7 +14,6 @@ from streamlit_autorefresh import st_autorefresh
 import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
-from streamlit_extras.switch_page_button import switch_page
 
 
 # ====================== CONFIGURAÇÕES GERAIS ========================= #
