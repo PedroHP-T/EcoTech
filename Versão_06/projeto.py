@@ -15,6 +15,7 @@ import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from streamlit_extras.switch_page_button import switch_page
+from PIL import image
 
 try:
     nlp = spacy.load("pt_core_news_sm")
@@ -531,7 +532,8 @@ elif selected == "Opiniões":
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Opiniões — E-lixo")
             if wordcloud_image is not None:
-                st.image(wordcloud_image, width=600)  # <---- Substituído
+                img = Image.fromarray(wordcloud_image)  # <-- converte o numpy array em PIL.Image
+                st.image(img)  # sem use_container_width
             else:
                 st.write("Sem nuvem de palavras disponível.")
             st.markdown("</div>", unsafe_allow_html=True)
@@ -540,7 +542,7 @@ elif selected == "Opiniões":
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Contagem de palavras")
             if freq_fig is not None:
-                st.plotly_chart(freq_fig, use_container_width=True)  # Plotly ainda aceita
+                st.plotly_chart(freq_fig, use_container_width=True)  # Plotly continua funcionando
             else:
                 st.write("Sem gráfico de frequência disponível.")
             st.markdown("</div>", unsafe_allow_html=True)
