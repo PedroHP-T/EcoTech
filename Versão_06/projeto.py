@@ -16,6 +16,7 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
+import numpy as np
 
 try:
     nlp = spacy.load("pt_core_news_sm")
@@ -531,11 +532,16 @@ elif selected == "Opiniões":
         with col1:
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Opiniões — E-lixo")
-            if wordcloud_image is not None:
-                img = Image.fromarray(wordcloud_image)  # <-- converte o numpy array em PIL.Image
+            
+            # Checagem segura da wordcloud
+            if wordcloud_image is not None and isinstance(wordcloud_image, np.ndarray):
+                img = Image.fromarray(wordcloud_image)
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
                 st.image(img)  # sem use_container_width
             else:
-                st.write("Sem nuvem de palavras disponível.")
+                st.write("Sem nuvem de palavras disponível ou imagem inválida.")
+            
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col2:
