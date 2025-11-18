@@ -1,0 +1,11 @@
+streamlit
+google-generativeai
+plotly
+streamlit-option-menu
+pandas
+spacy
+wordcloud
+streamlit-autorefresh
+folium
+streamlit-folium
+streamlit-extras
