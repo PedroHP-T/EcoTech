@@ -4,6 +4,7 @@ plotly
 streamlit-option-menu
 pandas
 spacy
+spacy_pt_core_news_sm
 wordcloud
 streamlit-autorefresh
 folium
