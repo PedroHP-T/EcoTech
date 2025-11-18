@@ -783,6 +783,7 @@ elif selected == "ChatBot":
             </style>
             """, unsafe_allow_html=True)
     st.markdown(f"<h2>EcoBot</h2>", unsafe_allow_html=True)
+    st.header("", divider="green")
     
     st.markdown("Fale com nosso assistente virtual especializado **apenas sobre descarte eletrônico e reciclagem tecnológica.**")
     
