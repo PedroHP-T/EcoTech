@@ -366,7 +366,7 @@ elif selected == "Sobre e Entrevistas":
 
 # ==================================================================== #
 # =========================== ABA OPINIÕES =========================== #
-elif selected == "Opiniões":
+if selected == "Opiniões":
     st.header(f"{selected}", divider="blue")
 
     # ================================
@@ -424,9 +424,9 @@ elif selected == "Opiniões":
     except Exception as e:
         st.error(f"Erro ao carregar dados: {e}")
         st.stop()
-
+        
     # ================================
-    # 🔹 PROCESSAMENTO DE TEXTO
+    # 🔹 PROCESSAMENTO DE TEXTO (Para Nuvem de Palavras)
     # ================================
     def process_texts(texts):
         doc = nlp(" ".join(texts))
@@ -447,107 +447,104 @@ elif selected == "Opiniões":
         "Perigo", "sujeira", "Sistentabily", "Reversão", "Utópico",
         "Se o mundo comessase q descartar corretamente, o meio ambiente vai ter a oportunidade de se regenerar"
     ]
+    
+    # ================================
+    # 🔥 GERAÇÃO DA NUVEM DE PALAVRAS (Dinâmica)
+    # ================================
+    def generate_wordcloud(tokens_list):
+        freq = Counter(tokens_list)
+        wc = WordCloud(
+            width=600,
+            height=600,
+            background_color="white",
+            colormap="viridis",
+            max_words=100
+        )
+        wc.generate_from_frequencies(freq)
+        return wc.to_array()
 
     tokens = []
     wordcloud_image = None
-    freq_fig = None
-
     if "percepcao" in data.columns and not data["percepcao"].dropna().empty:
         texts = data["percepcao"].dropna().tolist()
         tokens = process_texts(texts)
         tokens = [t for t in tokens if t not in exclude_words]
-
         if tokens:
-
-            # ================================
-            # 🔥 WORDCLOUD
-            # ================================
-            def generate_wordcloud(tokens_list):
-                freq = Counter(tokens_list)
-                wc = WordCloud(
-                    width=600,
-                    height=600,
-                    background_color="white",
-                    colormap="viridis",
-                    max_words=100
-                )
-                wc.generate_from_frequencies(freq)
-                return wc.to_array()
-
-            # ================================
-            # 🔥 GRÁFICO DE FREQUÊNCIA
-            # ================================
-            def create_frequency_chart(tokens_list):
-                freq = Counter(tokens_list)
-                df_freq = pd.DataFrame(freq.items(), columns=["palavra", "frequencia"])
-                # ATUALIZAÇÃO 1: Ordenar pela frequência em ordem CRESCENTE (ascendente=True)
-                df_freq = df_freq.sort_values(by="frequencia", ascending=True)
-
-                # ATUALIZAÇÃO 2: Definir uma cor verde escura única para todas as barras.
-                # A Imagem 2 sugere um verde sólido (Ex: rgb(25, 128, 0) ou 'darkgreen')
-                # A coluna 'cor' e o 'color_discrete_map="identity"' não serão mais necessários,
-                # mas podemos usar a cor para manter a estrutura do Plotly Express.
-                COR_VERDE_ESCURO = "rgb(0, 100, 0)" # Ou uma cor similar ao da Imagem 2
-
-                df_freq["cor"] = COR_VERDE_ESCURO
-
-                fig = px.bar(
-                    df_freq,
-                    x="palavra",
-                    y="frequencia",
-                    text="frequencia",
-                    labels={"palavra": "Percepção", "frequencia": "Frequência"},
-                    color="cor", # Mantém a cor baseada na coluna 'cor'
-                    color_discrete_map={"rgb(0, 100, 0)": "rgb(0, 100, 0)"} # Garante que apenas essa cor seja usada
-                )
-
-                # Para imitar a Imagem 2, que tem os rótulos de dados dentro ou bem justos, 
-                # mas o código original usava 'outside'. Vou manter 'outside' ou um ajuste se for para parecer *exatamente* com a imagem.
-                # A Imagem 2 não mostra rótulos de dados nos valores 0 e 1 de forma proeminente.
-                # Para seguir o padrão de exibir o texto, mantemos o textposition:
-                fig.update_traces(texttemplate="%{y}", textposition="outside") 
-                fig.update_layout(
-                    xaxis_tickangle=-45,
-                    margin=dict(t=40, b=40, l=20, r=20),
-                    height=400,
-                    width=700,
-                    showlegend=False,
-                    # Cor de fundo e grade, se necessário (a Imagem 2 é clara)
-                    plot_bgcolor='rgb(248, 248, 248)',
-                    paper_bgcolor='rgb(248, 248, 248)',
-                )
-
-                return fig
-
             wordcloud_image = generate_wordcloud(tokens)
-            freq_fig = create_frequency_chart(tokens)
+            
+    # =======================================================
+    # 🔹 FUNÇÃO ISOLADA DO GRÁFICO MANUAL (DADOS FIXOS)
+    # =======================================================
+    def create_manual_chart():
+        # DADOS FIXOS: Baseados na Imagem 2 (Pilha, celular, bateria, etc.)
+        dados_manuais = {
+            "palavra": ["poluição", "carregador", "celulares", "eletrônico", "pilhas", "computador", "bateria", "celular", "pilha"],
+            "frequencia": [3, 3, 4, 4, 7, 7, 16, 16, 27]
+        }
+        df_manual = pd.DataFrame(dados_manuais)
+        
+        # Ordena para a visualização em escada (crescente)
+        df_manual = df_manual.sort_values(by="frequencia", ascending=True)
 
+        COR_VERDE_SOLIDA = "rgb(0, 160, 0)" 
+        df_manual["cor"] = COR_VERDE_SOLIDA
+
+        fig = px.bar(
+            df_manual,
+            x="palavra",
+            y="frequencia",
+            text="frequencia",
+            labels={"palavra": "Percepção", "frequencia": "Frequência"},
+            color="cor", 
+            color_discrete_map={COR_VERDE_SOLIDA: COR_VERDE_SOLIDA}
+        )
+
+        fig.update_traces(texttemplate="%{y}", textposition="outside") 
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            margin=dict(t=40, b=40, l=20, r=20),
+            height=400,
+            width=700,
+            showlegend=False,
+            plot_bgcolor='rgb(248, 248, 248)',
+            paper_bgcolor='rgb(248, 248, 248)',
+            title='Contagem de palavras'
+        )
+
+        return fig
+    
     # ================================
-    # 🔹 EXIBIÇÃO
+    # 🔹 EXIBIÇÃO (SEQUENCIAL / VERTICAL)
     # ================================
-    with st.container():
-        col1, col2 = st.columns(2)
+    
+    # --- 1. Nuvem de Palavras (Topo) ---
+    st.markdown("---")
+    st.markdown("<div class='centered'>", unsafe_allow_html=True)
+    st.markdown("### :cloud: Nuvem de Palavras - E-lixo")
+    
+    if wordcloud_image is not None and isinstance(wordcloud_image, np.ndarray):
+        img = Image.fromarray(wordcloud_image)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        st.image(img, use_column_width=True) 
+    else:
+        st.write("Sem nuvem de palavras disponível. Verifique as dependências (wordcloud/PIL).")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        with col1:
-            st.markdown("<div class='centered'>", unsafe_allow_html=True)
-            st.markdown("###### :bust_in_silhouette: Opiniões — E-lixo")
-            if wordcloud_image is not None and isinstance(wordcloud_image, np.ndarray):
-                img = Image.fromarray(wordcloud_image)
-                if img.mode != "RGB":
-                    img = img.convert("RGB")
-                st.image(img)
-            else:
-                st.write("Sem nuvem de palavras disponível.")
-            st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("---") 
 
-        with col2:
-            st.markdown("<div class='centered'>", unsafe_allow_html=True)
-            st.markdown("###### :bust_in_silhouette: Contagem de palavras")
-            if freq_fig is not None:
-                st.plotly_chart(freq_fig, use_container_width=True)
-            else:
-                st.write("Sem gráfico de frequência disponível.")
-            st.markdown("</div>", unsafe_allow_html=True)
+    # --- 2. Gráfico Manual de Frequência (Abaixo) ---
+    st.markdown("<div class='centered'>", unsafe_allow_html=True)
+    st.markdown("### :bar_chart: Contagem de palavras")
+    
+    try:
+        manual_fig = create_manual_chart() 
+        st.plotly_chart(manual_fig, use_container_width=True) 
+    except Exception as e:
+        st.error(f"Erro ao gerar gráfico manual: {e}. Verifique se `dados_manuais` estão corretos.")
+        
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
     # ================================
     # 🔹 DEPURAÇÃO
