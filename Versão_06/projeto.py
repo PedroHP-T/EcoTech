@@ -234,7 +234,8 @@ elif selected == "Sobre e Entrevistas":
     """, unsafe_allow_html=True)
 
     st.markdown(f"<h2>{selected}</h2>", unsafe_allow_html=True)
-    st.markdown('<div class="full-divider-red"></div>', unsafe_allow_html=True)
+
+    st.divider(color="red")
     
     st.markdown("### EcoTech - O Início")
 
