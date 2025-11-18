@@ -531,7 +531,7 @@ elif selected == "Opiniões":
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Opiniões — E-lixo")
             if wordcloud_image is not None:
-                st.image(wordcloud_image, use_container_width=True)
+                st.image(wordcloud_image, width=600)  # <---- Substituído
             else:
                 st.write("Sem nuvem de palavras disponível.")
             st.markdown("</div>", unsafe_allow_html=True)
@@ -540,10 +540,11 @@ elif selected == "Opiniões":
             st.markdown("<div class='centered'>", unsafe_allow_html=True)
             st.markdown("###### :bust_in_silhouette: Contagem de palavras")
             if freq_fig is not None:
-                st.plotly_chart(freq_fig, use_container_width=True)
+                st.plotly_chart(freq_fig, use_container_width=True)  # Plotly ainda aceita
             else:
                 st.write("Sem gráfico de frequência disponível.")
             st.markdown("</div>", unsafe_allow_html=True)
+
 
     # ================================
     # 🔥 DEPURAÇÃO
