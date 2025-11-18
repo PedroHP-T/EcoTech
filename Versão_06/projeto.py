@@ -15,7 +15,7 @@ import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from streamlit_extras.switch_page_button import switch_page
-from PIL import image
+from PIL import Image
 
 try:
     nlp = spacy.load("pt_core_news_sm")
