@@ -502,25 +502,43 @@ elif selected == "Opiniões":
                 return df_freq.sort_values(by="frequencia", ascending=False).head(10)
 
             def create_frequency_chart(tokens):
-                df_freq = create_frequency_data(tokens)
+                # Frequências fixas conforme você enviou
+                data_dict = {
+                    "palavra": ["pilha", "celular", "bateria", "computador", "eletronicos", "carregador", "poliução"],
+                    "frequencia": [34, 20, 19, 7, 4, 3, 3]
+                }
+                
+                df_freq = pd.DataFrame(data_dict)
+                
+                # ordena do maior para o menor
+                df_freq = df_freq.sort_values(by="frequencia", ascending=False)
+
+                # cores verdes proporcionais
+                df_freq["cor"] = df_freq["frequencia"].apply(
+                    lambda x: f"rgb(0,{50 + int(205 * x/df_freq['frequencia'].max())},0)"
+                )
+
                 fig = px.bar(
                     df_freq,
                     x="palavra",
                     y="frequencia",
-                    text="frequencia",  # mostra os valores reais
+                    text="frequencia",
                     labels={"palavra": "Percepção", "frequencia": "Frequência"},
-                    color_discrete_sequence=px.colors.sequential.Greens  # força tons de verde
+                    color="cor",
+                    color_discrete_map="identity"
                 )
+
                 fig.update_traces(
-                    texttemplate="%{y}",  # mostra o valor real da frequência
+                    texttemplate="%{y}",
                     textposition='outside'
                 )
                 fig.update_layout(
                     xaxis_tickangle=-45,
-                    margin=dict(t=40, b=40)
+                    margin=dict(t=40, b=40),
+                    showlegend=False
                 )
+                
                 return fig
-
 
             wordcloud_image = generate_wordcloud(tokens)
             freq_fig = create_frequency_chart(tokens)
