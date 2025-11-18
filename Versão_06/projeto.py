@@ -487,7 +487,7 @@ if selected == "Opiniões":
         df_manual['frequencia'] = df_manual['frequencia'].astype(int)
 
         # Reordena para a visualização em escada (crescente)
-        df_manual = df_manual.sort_values(by="frequencia", ascending=True)
+        df_manual = df_manual.sort_values(by="frequencia", ascending=False)
 
         # CORREÇÃO 2: Define cores para replicar o verde neon/brilhante da Imagem 3
         # Usaremos verde sólido, mas mais brilhante
