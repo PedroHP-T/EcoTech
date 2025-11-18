@@ -472,21 +472,26 @@ if selected == "Opiniões":
         if tokens:
             wordcloud_image = generate_wordcloud(tokens)
             
-    # =======================================================
+ # =======================================================
     # 🔹 FUNÇÃO ISOLADA DO GRÁFICO MANUAL (DADOS FIXOS)
     # =======================================================
     def create_manual_chart():
-        # DADOS FIXOS: Baseados na Imagem 2 (Pilha, celular, bateria, etc.)
+        # DADOS FIXOS: (Os valores que você deseja que apareçam)
         dados_manuais = {
             "palavra": ["poluição", "carregador", "celulares", "eletrônico", "pilhas", "computador", "bateria", "celular", "pilha"],
             "frequencia": [3, 3, 4, 4, 7, 7, 16, 16, 27]
         }
         df_manual = pd.DataFrame(dados_manuais)
         
-        # Ordena para a visualização em escada (crescente)
+        # CORREÇÃO 1: Garante que a coluna 'frequencia' é numérica
+        df_manual['frequencia'] = df_manual['frequencia'].astype(int)
+
+        # Reordena para a visualização em escada (crescente)
         df_manual = df_manual.sort_values(by="frequencia", ascending=True)
 
-        COR_VERDE_SOLIDA = "rgb(0, 160, 0)" 
+        # CORREÇÃO 2: Define cores para replicar o verde neon/brilhante da Imagem 3
+        # Usaremos verde sólido, mas mais brilhante
+        COR_VERDE_SOLIDA = "rgb(0, 204, 0)" 
         df_manual["cor"] = COR_VERDE_SOLIDA
 
         fig = px.bar(
@@ -496,8 +501,13 @@ if selected == "Opiniões":
             text="frequencia",
             labels={"palavra": "Percepção", "frequencia": "Frequência"},
             color="cor", 
-            color_discrete_map={COR_VERDE_SOLIDA: COR_VERDE_SOLIDA}
+            color_discrete_map={COR_VERDE_SOLIDA: COR_VERDE_SOLIDA},
+            # CORREÇÃO 3: Força o Plotly a tratar a coluna X como categórica para manter a ordem
+            category_orders={"palavra": df_manual["palavra"].tolist()}
         )
+        
+        # CORREÇÃO 4: Remove a barra de cor que não é necessária no gráfico final
+        fig.update_layout(showlegend=False)
 
         fig.update_traces(texttemplate="%{y}", textposition="outside") 
         fig.update_layout(
@@ -505,7 +515,6 @@ if selected == "Opiniões":
             margin=dict(t=40, b=40, l=20, r=20),
             height=400,
             width=700,
-            showlegend=False,
             plot_bgcolor='rgb(248, 248, 248)',
             paper_bgcolor='rgb(248, 248, 248)',
             title='Contagem de palavras'
