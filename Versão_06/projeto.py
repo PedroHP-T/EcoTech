@@ -281,12 +281,13 @@ elif selected == "Sobre e Entrevistas":
 
     <div class="responsive-video">
         <iframe 
-            src="https://www.youtube.com/embed/NklcpkNMhSE?controls=0&modestbranding=1&rel=0&showinfo=0&fs=0"
+            src="https://www.youtube.com/embed/NklcpkNMhSE?controls=1&rel=0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen>
         </iframe>
     </div>
     """, unsafe_allow_html=True)
+
 
         # 5 colunas
     col1, col2, col3, col4, col5 = st.columns(5)
